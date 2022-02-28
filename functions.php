@@ -138,7 +138,6 @@ require get_template_directory() . '/shortcodes/code-shortcodes.php';
 
 //Page options 'RESOURCES POSTS SECTION'
 if( function_exists('acf_add_options_page') ) {
-
 	acf_add_options_page(array(
 		'page_title'    	=> 'Theme Options',
 		'icon_url'			=> 'dashicons-feedback'
@@ -147,36 +146,38 @@ if( function_exists('acf_add_options_page') ) {
 
 function form_password_page() {
 	global $post;
-	// Check if is sub-page: 
-	if (is_page() && $post->post_parent ) {
-		$ancestors = $post->ancestors;
-		foreach ( $ancestors as $ancestor ) {
-			// Check if parent page has password
-			if ( post_password_required( $ancestor ) ) {
-
-				//Redirect to parent page
-				$parent_url = get_permalink($post->post_parent);
-				header('Location:' . $parent_url);
-				exit();
-			}
+	// Check if is sub-page:
+	if (is_page() && $post->post_parent > 0 ) { 
+		
+		if ( post_password_required( $post->post_parent ) ) {
+			//Redirect to parent page
+			$parent_url = get_permalink($post->post_parent);
+			header('Location:' . $parent_url);
+			exit();
 		}
-	} 
+	} else {
+			//Get CF values in parent page.
+			$redirect_page = get_field('redirect_page_to', $post->ID);
+			$page_url = get_field('page_url', $post->ID);
 
-	// Parent page:
-	else {
-		// var_dump($post->post_password);
-		// var_dump(post_password_required($post->ID));
-		if(	$post->post_password && !post_password_required($post->ID) && $post->post_parent !== 0 ) {
-			//Redirect to first child page when correct password is entered
-			$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order");
-			if ($pagekids) {
-				if (!get_post_meta($post->ID, 'dont_redirect', true)) {
-					$firstchild = $pagekids[0];
-					wp_redirect(get_permalink($firstchild->ID));
+			//Check if post requires password and correct password has been provided
+			if(	$post->post_password && !post_password_required($post->ID) ) {
+
+				//Redirect to first child page
+				if ($redirect_page == 'childPage' ) {
+					$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order");
+					if ($pagekids) {
+						$firstchild = $pagekids[0];
+						wp_redirect(get_permalink($firstchild->ID));
+						exit;
+					}
+
+				//Redirect to specific page
+				} else {
+					wp_redirect($page_url);
 					exit;
 				}
 			}
-		}
 	}
 }
 
