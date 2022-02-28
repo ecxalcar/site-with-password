@@ -1,0 +1,16 @@
+/*
+	Theme Name: CODE
+	Theme URI: http://code.com
+	Description: CODE WordPress Theme
+	Version: 1.0
+	Author: Name
+	Author URI: http://name.com
+	Tags: takeOff, HTML5, CSS3, wordpress, JS, jQuery
+
+	License: MIT
+	License URI: http://opensource.org/licenses/mit-license.php
+*/
+
+input {
+	text-transform: lowercase !important;
+}
