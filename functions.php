@@ -147,32 +147,44 @@ if( function_exists('acf_add_options_page') ) {
 function form_password_page() {
 	global $post;
 	// Check if is sub-page:
-	if (is_page() && $post->post_parent > 0 ) { 
+	if (is_page() && $post->post_parent > 0 ) { // verifica si es padre o hijo $post->post_parent retorna id de padre
 		
-		if ( post_password_required( $post->post_parent ) ) {
+		if ( post_password_required( $post->post_parent ) ) { //verifica si padre requiere contraseña y se ha proporcionado la contraseña correcta - true
 			//Redirect to parent page
-			$parent_url = get_permalink($post->post_parent);
+			$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
 			header('Location:' . $parent_url);
 			exit();
 		}
+		// else {
+			// 	//falso si no se requiere una contraseña o está presente la cookie de contraseña correcta. CUANDO YA SE INGRESO LA CONTRASEñA CORRECTA
+			// }
 	} else {
-			//Get CF values in parent page.
+		// if(	$post->post_password && !post_password_required($post->ID) && $post->post_parent !== 0 ) {
+
 			$redirect_page = get_field('redirect_page_to', $post->ID);
 			$page_url = get_field('page_url', $post->ID);
 
-			//Check if post requires password and correct password has been provided
-			if(	$post->post_password && !post_password_required($post->ID) ) {
+			// if ($redirect_page == 'childPage' ) {
+			// 	echo 'redirect to child page';
+			// } elseif($redirect_page == 'urlPage' ) {
+			// 	echo 'redirect to specific page';
+			// 	echo $page_url;
+			// }
 
-				//Redirect to first child page
+			// var_dump($post->post_password); // retorna la contraseña de la pagina
+			// var_dump(!post_password_required($post->ID)); // retorna true cuando ya esta desbloqueado.
+			// var_dump($post->post_parent !== 0); // retorna falso siempre bloqueado/desbloqueado
+			// var_dump($post->post_parent); // retorna 0 siempre - retorna si la pagina es de nivel superior
+
+			if(	$post->post_password && !post_password_required($post->ID) ) {
 				if ($redirect_page == 'childPage' ) {
-					$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order");
+					$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order"); // muestra todas las paginas hijo con su informacion
 					if ($pagekids) {
 						$firstchild = $pagekids[0];
 						wp_redirect(get_permalink($firstchild->ID));
 						exit;
 					}
 
-				//Redirect to specific page
 				} else {
 					wp_redirect($page_url);
 					exit;
@@ -186,4 +198,61 @@ add_filter( 'protected_title_format', 'remove_protected_text' );
 	function remove_protected_text() {
 	return __('%s');
 }
+
+//Add 3 Children to Custom Pos Type
+function add_children_custom_post_type( $post_id ) {  
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+        return;
+
+    if ( !wp_is_post_revision( $post_id ) && 'companies' == get_post_type( $post_id ) && 'publish' != get_post_status( $post_id ) ) {  
+        $show = get_post( $post_id );
+        if( 0 == $show->post_parent ){
+            $children =& get_children(
+                array(
+                    'post_parent' => $post_id,
+                    'post_type' => 'companies'
+                )
+            );
+            if( empty( $children ) ){
+
+				//Child page 
+				$titles	= ['History', 'About', 'Contact'];
+				foreach ($titles as $title) {
+					$child = array(
+						'post_type' => 'companies',
+						'post_title' => $title,
+						'post_content' => '',
+						'post_status' => 'publish',
+						'post_parent' => $post_id,
+						'post_author' => 1
+					);
+					wp_insert_post( $child );
+				}
+            }
+        }
+    }
+}
+add_action( 'save_post', 'add_children_custom_post_type' );
+
+
+//Delete Custom Post Type Children
+// add_action('delete_post', 'wpse53967_clear_all_childs');
+
+// function wpse53967_clear_all_childs($post_id){
+//     $childs = get_post(
+// 		array(
+// 			'post_parent' => $post_id,
+// 			'post_type' => 'companies' 
+// 		)
+//     );
+
+//     if(empty($childs))
+//         return;
+
+//     foreach($childs as $post){
+//         wp_delete_post($post->ID, true); // true => bypass trash and permanently delete
+//     }
+// }
+
 ?>
+

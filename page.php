@@ -4,7 +4,6 @@
 	<main role="main">
 		<!-- section -->
 		<section>
-
 			<h1><?php the_title(); ?></h1>
 			<!-- <h2>Hello</h2> -->
 
@@ -14,11 +13,22 @@
 			<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 
 			<div class="container w-50 mx-auto">
-				<?php the_content(); ?>
+				<?php
+					the_content();
+
+					//Hide custom fields when pages is protected
+					if( !post_password_required() ){
+
+						$text = the_field('text');
+						$description = the_field('description');
+						echo $text;
+						echo $description;
+
+					}
+				?>
 			</div>
 
 				<br class="clear">
-
 				<?php edit_post_link(); ?>
 
 			</article>
