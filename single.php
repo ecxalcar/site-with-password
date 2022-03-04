@@ -1,3 +1,4 @@
+<?php do_action( 'delete_post', $post_id );  ?>
 <?php get_header(); ?>
 
 	<main role="main">
@@ -20,8 +21,6 @@
 
 						<div class="col-md-4">
 							<span><?php echo do_shortcode('[related_posts]'); ?></span>
-
-							
 						</div>
 					</div>
 					<br>

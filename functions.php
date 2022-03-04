@@ -144,60 +144,60 @@ if( function_exists('acf_add_options_page') ) {
 	));
 }
 
-function form_password_page() {
-	global $post;
-	// Check if is sub-page:
-	if (is_page() && $post->post_parent > 0 ) { // verifica si es padre o hijo $post->post_parent retorna id de padre
+// function form_password_page() {
+// 	global $post;
+// 	// Check if is sub-page:
+// 	if (is_page() && $post->post_parent > 0 ) { // verifica si es padre o hijo $post->post_parent retorna id de padre
 		
-		if ( post_password_required( $post->post_parent ) ) { //verifica si padre requiere contraseña y se ha proporcionado la contraseña correcta - true
-			//Redirect to parent page
-			$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
-			header('Location:' . $parent_url);
-			exit();
-		}
-		// else {
-			// 	//falso si no se requiere una contraseña o está presente la cookie de contraseña correcta. CUANDO YA SE INGRESO LA CONTRASEñA CORRECTA
-			// }
-	} else {
-		// if(	$post->post_password && !post_password_required($post->ID) && $post->post_parent !== 0 ) {
+// 		if ( post_password_required( $post->post_parent ) ) { //verifica si padre requiere contraseña y se ha proporcionado la contraseña correcta - true
+// 			//Redirect to parent page
+// 			$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
+// 			header('Location:' . $parent_url);
+// 			exit();
+// 		}
+// 		// else {
+// 			// 	//falso si no se requiere una contraseña o está presente la cookie de contraseña correcta. CUANDO YA SE INGRESO LA CONTRASEñA CORRECTA
+// 			// }
+// 	} else {
+// 		// if(	$post->post_password && !post_password_required($post->ID) && $post->post_parent !== 0 ) {
 
-			$redirect_page = get_field('redirect_page_to', $post->ID);
-			$page_url = get_field('page_url', $post->ID);
+// 			$redirect_page = get_field('redirect_page_to', $post->ID);
+// 			$page_url = get_field('page_url', $post->ID);
 
-			// if ($redirect_page == 'childPage' ) {
-			// 	echo 'redirect to child page';
-			// } elseif($redirect_page == 'urlPage' ) {
-			// 	echo 'redirect to specific page';
-			// 	echo $page_url;
-			// }
+// 			// if ($redirect_page == 'childPage' ) {
+// 			// 	echo 'redirect to child page';
+// 			// } elseif($redirect_page == 'urlPage' ) {
+// 			// 	echo 'redirect to specific page';
+// 			// 	echo $page_url;
+// 			// }
 
-			// var_dump($post->post_password); // retorna la contraseña de la pagina
-			// var_dump(!post_password_required($post->ID)); // retorna true cuando ya esta desbloqueado.
-			// var_dump($post->post_parent !== 0); // retorna falso siempre bloqueado/desbloqueado
-			// var_dump($post->post_parent); // retorna 0 siempre - retorna si la pagina es de nivel superior
+// 			// var_dump($post->post_password); // retorna la contraseña de la pagina
+// 			// var_dump(!post_password_required($post->ID)); // retorna true cuando ya esta desbloqueado.
+// 			// var_dump($post->post_parent !== 0); // retorna falso siempre bloqueado/desbloqueado
+// 			// var_dump($post->post_parent); // retorna 0 siempre - retorna si la pagina es de nivel superior
 
-			if(	$post->post_password && !post_password_required($post->ID) ) {
-				if ($redirect_page == 'childPage' ) {
-					$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order"); // muestra todas las paginas hijo con su informacion
-					if ($pagekids) {
-						$firstchild = $pagekids[0];
-						wp_redirect(get_permalink($firstchild->ID));
-						exit;
-					}
+// 			if(	$post->post_password && !post_password_required($post->ID) ) {
+// 				if ($redirect_page == 'childPage' ) {
+// 					$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order"); // muestra todas las paginas hijo con su informacion
+// 					if ($pagekids) {
+// 						$firstchild = $pagekids[0];
+// 						wp_redirect(get_permalink($firstchild->ID));
+// 						exit;
+// 					}
 
-				} else {
-					wp_redirect($page_url);
-					exit;
-				}
-			}
-	}
-}
+// 				} else {
+// 					wp_redirect($page_url);
+// 					exit;
+// 				}
+// 			}
+// 	}
+// }
 
-// Remove “Protected:” prefix for password protected page
-add_filter( 'protected_title_format', 'remove_protected_text' );
-	function remove_protected_text() {
-	return __('%s');
-}
+// // Remove “Protected:” prefix for password protected page
+// add_filter( 'protected_title_format', 'remove_protected_text' );
+// 	function remove_protected_text() {
+// 	return __('%s');
+// }
 
 //Add 3 Children to Custom Pos Type
 function add_children_custom_post_type( $post_id ) {  
@@ -235,10 +235,121 @@ function add_children_custom_post_type( $post_id ) {
 add_action( 'save_post', 'add_children_custom_post_type' );
 
 
-//Delete Custom Post Type Children
-// add_action('delete_post', 'wpse53967_clear_all_childs');
+function form_password_page() {
+	global $post;
+	$password_page = get_field('password_page', $post->ID);
 
-// function wpse53967_clear_all_childs($post_id){
+	if (!empty($password_page)) {
+		add_filter('the_content', 'my_custom_password_form');
+		echo 'tiene contraseña ';
+	}
+
+	if(is_page() && $post->post_parent) {
+		// echo 'es subpage';
+		$parent_has_password = get_field('password_page', $post->post_parent );
+		if ($parent_has_password) {
+			// echo 'padre tiene pass';
+			$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
+			header('Location:' . $parent_url);
+			exit();
+
+		} else  {
+			echo 'padre no tiene contraseña';
+		}
+	}
+
+	function my_custom_password_form() {
+		global $post;
+		$label = 'pwbox-' . ( empty( $post->ID ) ? rand() : $post->ID );
+		$output = '
+		<div class="boldgrid-section">
+			<div class="container">
+				<form class="form" method="post" action="">
+					<p>' . __( 'This is my Custom Form . This content is password protected. To view it please enter your password below:' ) . '</p>
+					<label for="' . $label . '">' . __( 'Password:' ) . ' <input name="post_password" id="' . $label . '" type="password" size="20" class="form-control" /></label><button type="submit" name="Submit" class="button-primary">' . esc_attr_x( 'Enter', 'post password form' ) . '</button>
+				</form>
+			</div>
+		</div>';
+		return $output;
+	}
+
+}
+
+// $password = $_POST['post_password'];
+// Find a post with the ACF Custom value that matches our username.
+// $user_query = new WP_Query(array( 
+//     'posts_per_page' => 1, 
+//     'post_type' => 'page', 
+//     'meta_query' => array( 
+// 		'relation' => 'or', 
+// 		array( 
+// 			'key' => 'password', 
+// 			'value' => $password, 
+// 			'compare' => '=' 
+// 		) 
+//     ) 
+// ));
+
+// if ($user_query->have_posts()) { 
+//     while($user_query->have_posts()){
+//         // Load the current post.
+//         $user_query->the_post(); 
+//         // Get the current post.
+//         $user = get_post();
+//         // Get the hashed password from the post.
+//         $hashed_password = get_post_meta($user->ID, 'password', true); 
+//         // Compare the hashed passwords.
+//         if (wp_check_password(wp_hash_password($password), $hashed_password)) { 
+//             echo "logged in successfull"; 
+//         } else { 
+//             echo "user found, password incorrect"; 
+//         }
+//     }
+// }
+
+if ( $_POST['submit'] ) {
+		if ($password == 'Parent 1 Home') {
+			header('Location: http://sitewithpassword.local/about/history/');
+		}
+
+	// if ( $_POST['post_password'] == $password_page ) {
+	
+	// 	// setcookie( 'wp-postpass_' . COOKIEHASH, $hasher->HashPassword( wp_unslash( $_POST['post_password'] ) ), $expire, COOKIEPATH, COOKIE_DOMAIN, $secure );
+	// 	// setcookie( "show_page", get_the_ID(), time() + 1 * 24 * 60 * 60);
+	// 	echo 'Cookie creada';
+	// } else {
+	// 	echo 'Cookie no creada';
+	// }
+}
+
+
+
+// Delete Custom Post Type Children
+
+// function clear_all_childs($post_id){
+// 	$args = array( 
+// 		'post_parent' => $parent_id,
+// 		'post_type' => 'companies'
+// 	);
+	
+// 	$posts = get_posts( $args );
+	
+// 	if (is_array($posts) && count($posts) > 0) {
+		
+// 		// Delete all the Children of the Parent Page
+// 		foreach($posts as $post){
+// 			wp_delete_post($post->ID, true);
+// 		}
+// 	}
+	
+// 	// Delete the Parent Page
+// 	wp_delete_post($parent_id, true);
+// }
+// add_filter('delete_post', 'clear_all_childs');
+
+// add_action('trashed_post', 'clear_all_children');
+
+// function clear_all_children($post_id){
 //     $childs = get_post(
 // 		array(
 // 			'post_parent' => $post_id,
@@ -246,8 +357,9 @@ add_action( 'save_post', 'add_children_custom_post_type' );
 // 		)
 //     );
 
-//     if(empty($childs))
+//     if(empty($childs)) {
 //         return;
+// 	}
 
 //     foreach($childs as $post){
 //         wp_delete_post($post->ID, true); // true => bypass trash and permanently delete

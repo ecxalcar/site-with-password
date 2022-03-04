@@ -17,15 +17,27 @@
 					the_content();
 
 					//Hide custom fields when pages is protected
-					if( !post_password_required() ){
+					$password_page = get_field('password_page', $post->ID);
+					if( !$password_page ){
 
 						$text = the_field('text');
 						$description = the_field('description');
 						echo $text;
 						echo $description;
-
 					}
+
 				?>
+
+				<?php 
+				// if (function_exists('get_field')) { 
+                //     $requirements = get_field('password_page');
+                //         if($requirements){
+                //             foreach($requirements as $requirement){
+				// 				echo apply_filters('requirement', $requirement);
+                //             } 
+                //         } 
+				// 	} 
+				// ?>
 			</div>
 
 				<br class="clear">
