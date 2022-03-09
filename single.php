@@ -1,4 +1,3 @@
-<?php do_action( 'delete_post', $post_id );  ?>
 <?php get_header(); ?>
 
 	<main role="main">

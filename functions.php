@@ -234,30 +234,103 @@ function add_children_custom_post_type( $post_id ) {
 }
 add_action( 'save_post', 'add_children_custom_post_type' );
 
+//Delete all children
+function remove_all_children($post_id) {
+	global $post;
+	$child_ID = $post->ID;
+	$args =  array(
+		'post_type' => 'companies', 
+		'post_parent' => $child_ID,
+		'posts_per_page' => -1
+	);
+	$children = get_posts($args);
 
+	if($children) {
+		foreach($children as $child){
+			wp_delete_post($child->ID, true);
+		}
+	}
+}
+add_action('trashed_post', 'remove_all_children');
+
+
+//Password protected
 function form_password_page() {
 	global $post;
 	$password_page = get_field('password_page', $post->ID);
+	// $password_page =  wp_hash_password($password_page);
 
 	if (!empty($password_page)) {
 		add_filter('the_content', 'my_custom_password_form');
-		echo 'tiene contraseña ';
+		// echo $password_page . '    ';
 	}
 
-	if(is_page() && $post->post_parent) {
-		// echo 'es subpage';
-		$parent_has_password = get_field('password_page', $post->post_parent );
-		if ($parent_has_password) {
-			// echo 'padre tiene pass';
-			$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
-			header('Location:' . $parent_url);
-			exit();
 
-		} else  {
-			echo 'padre no tiene contraseña';
+	if(isset($_POST['send'])) {
+		$pass = trim($_POST['post_password']);
+
+		if(empty($pass)) {
+			echo '<div class="error">Please enter your pass.</div>';
+		} else {
+			if ($pass == $password_page) {
+				setcookie( "show_page", get_the_ID(), time() + 1 * 24 * 60 * 60);
+				echo 'cookie creada';
+				var_dump('COOKIE: ' . $_COOKIE['show_page']);
+				// var_dump($post->post_parent);
+
+				$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order"); // muestra todas las paginas hijo con su informacion
+				if ($pagekids) {
+					$firstchild = $pagekids[0];
+					wp_redirect(get_permalink($firstchild->ID));
+					exit;
+				}
+
+				// if ( isset( $_COOKIE['show_page'] ) ) {
+				// 	if ( $_COOKIE['show_page'] == $post->post_parent ) {
+				// 	}
+				// }
+			} else {
+				echo 'contraseña incorrecta';
+			}
+		//redirect
+		// $url = 'http://sitewithpassword.local/about/history/';
+		// redirect($url);
 		}
 	}
 
+	if ( isset($_COOKIE['show_page']) ) {
+		// echo 'no entra if';
+		$post_parent_id = strval($post->ID);
+		// var_dump($post_parent_id);
+		// var_dump($_COOKIE['show_page']);
+
+		$post_id_parent = $post->post_parent;
+		if ( $_COOKIE['show_page'] == $post_parent_id ) {
+			// echo 'entra if';
+			$pagekids = get_pages("child_of=".$post->ID."&sort_column=menu_order"); // muestra todas las paginas hijo con su informacion
+			if ($pagekids) {
+				$firstchild = $pagekids[0];
+				wp_redirect(get_permalink($firstchild->ID));
+				exit;
+			}
+		}
+	} else {
+		if(is_page() && $post->post_parent) {
+			// echo 'es subpage';
+			$parent_has_password = get_field('password_page', $post->post_parent );
+			if ($parent_has_password) {
+				// echo 'padre tiene pass';
+				$parent_url = get_permalink($post->post_parent); // obtiene url por id del padre
+				header('Location:' . $parent_url);
+				exit();
+	
+			} else  {
+				echo 'padre no tiene contraseña';
+			}
+		}
+	}
+	
+	//Custom Password Form
 	function my_custom_password_form() {
 		global $post;
 		$label = 'pwbox-' . ( empty( $post->ID ) ? rand() : $post->ID );
@@ -266,16 +339,39 @@ function form_password_page() {
 			<div class="container">
 				<form class="form" method="post" action="">
 					<p>' . __( 'This is my Custom Form . This content is password protected. To view it please enter your password below:' ) . '</p>
-					<label for="' . $label . '">' . __( 'Password:' ) . ' <input name="post_password" id="' . $label . '" type="password" size="20" class="form-control" /></label><button type="submit" name="Submit" class="button-primary">' . esc_attr_x( 'Enter', 'post password form' ) . '</button>
+					<label for="' . $label . '">' . __( 'Password:' ) . ' <input name="post_password" id="' . $label . '" type="password" size="20" class="form-control" /></label><button type="submit" name="send" class="button-primary">' . esc_attr_x( 'Enter', 'post password form' ) . '</button>
 				</form>
 			</div>
 		</div>';
 		return $output;
 	}
-
 }
 
-// $password = $_POST['post_password'];
+function redirect($url){
+    $string = '<script type="text/javascript">';
+    $string .= 'window.location = "' . $url . '"';
+    $string .= '</script>';
+    echo $string;
+}
+
+// function ns_function_encrypt_passwords( $value, $post_id, $field  )
+// {
+//     $value = wp_hash_password( $value );
+//     return $value;
+// }
+// add_filter('acf/update_value/type=password', 'ns_function_encrypt_passwords', 10, 3);
+
+// function prefix_send_email_to_admin() {
+	
+// 	if ( $_POST['submit'] ) {
+// 		$password = $_POST['post_password'];
+// 		if ($password == 'Parent 1 Home') {
+// 			header('Location: http://sitewithpassword.local/about/history/');
+// 		}
+// 	}
+// }
+// add_filter( 'my_custom_password_form', 'prefix_send_email_to_admin' );
+
 // Find a post with the ACF Custom value that matches our username.
 // $user_query = new WP_Query(array( 
 //     'posts_per_page' => 1, 
@@ -307,20 +403,20 @@ function form_password_page() {
 //     }
 // }
 
-if ( $_POST['submit'] ) {
-		if ($password == 'Parent 1 Home') {
-			header('Location: http://sitewithpassword.local/about/history/');
-		}
+// if ( $_POST['submit'] ) {
+// 		if ($password == 'Parent 1 Home') {
+// 			header('Location: http://sitewithpassword.local/about/history/');
+// 		}
 
-	// if ( $_POST['post_password'] == $password_page ) {
+// 	// if ( $_POST['post_password'] == $password_page ) {
 	
-	// 	// setcookie( 'wp-postpass_' . COOKIEHASH, $hasher->HashPassword( wp_unslash( $_POST['post_password'] ) ), $expire, COOKIEPATH, COOKIE_DOMAIN, $secure );
-	// 	// setcookie( "show_page", get_the_ID(), time() + 1 * 24 * 60 * 60);
-	// 	echo 'Cookie creada';
-	// } else {
-	// 	echo 'Cookie no creada';
-	// }
-}
+// 	// 	// setcookie( 'wp-postpass_' . COOKIEHASH, $hasher->HashPassword( wp_unslash( $_POST['post_password'] ) ), $expire, COOKIEPATH, COOKIE_DOMAIN, $secure );
+// 	// 	// setcookie( "show_page", get_the_ID(), time() + 1 * 24 * 60 * 60);
+// 	// 	echo 'Cookie creada';
+// 	// } else {
+// 	// 	echo 'Cookie no creada';
+// 	// }
+// }
 
 
 
