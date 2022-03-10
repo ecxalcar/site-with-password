@@ -4,16 +4,16 @@
 	<main role="main">
 		<!-- section -->
 		<section>
-			<h1><?php the_title(); ?></h1>
-			<!-- <h2>Hello</h2> -->
 
 		<?php if (have_posts()): while (have_posts()) : the_post(); ?>
-
 			<!-- article -->
 			<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 
-			<div class="container w-50 mx-auto">
+			<div class="container pt-5">
+				<h1><?php the_title(); ?></h1>
+				
 				<?php
+					
 					the_content();
 
 					//Hide custom fields when pages is protected
