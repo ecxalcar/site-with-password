@@ -144,6 +144,7 @@ if( function_exists('acf_add_options_page') ) {
 	));
 }
 
+
 // Add 3 Children to Custom Pos Type companies
 function add_children_custom_post_type( $post_id ) {  
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
@@ -198,6 +199,7 @@ function trash_post_children($post_id) {
 }
 add_action('trashed_post', 'trash_post_children');
 
+
 // Restore Post
 function restore_post_children($post_id) {
 	$parent_ID = $post_id;
@@ -207,14 +209,26 @@ function restore_post_children($post_id) {
 		'posts_per_page' => -1,
 		'post_status'	=> 'trash'
 	);
+
 	$children = get_posts($args);
 	if($children) {
-		foreach($children as $p) {
-			wp_untrash_post($p->ID);
+		foreach($children as $child) {
+			$child_status = get_post_meta( $child->ID, '_wp_trash_meta_status', true );
+			wp_untrash_post($child->ID);
+			
+			$my_post = array(
+				'ID'           => $child->ID,
+				'post_status'   => $child_status
+			);
+			wp_update_post( $my_post );
 		}
 	}
+
 }
 add_action('untrash_post', 'restore_post_children');
+
+
+
 
 // Delete all children
 function remove_post_children($post_id) {
@@ -232,7 +246,6 @@ function remove_post_children($post_id) {
 	}
 }
 add_action('before_delete_post', 'remove_post_children');
-
 
 //====PASSWORD PROTECTED CPT AND PAGES=======
 //Register session
